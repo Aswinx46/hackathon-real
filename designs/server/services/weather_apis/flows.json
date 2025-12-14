@@ -1,0 +1,488 @@
+[
+    {
+        "id": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "type": "tab",
+        "createdDate": "2025-12-13T13:32:21.712Z",
+        "label": "flows",
+        "disabled": false,
+        "info": "",
+        "functionSeq": 0,
+        "generateNext": true,
+        "serviceName": "flows",
+        "relativeParentPath": "weather_apis"
+    },
+    {
+        "id": "sd_cDMb8lwTpULyj0BU",
+        "type": "Start",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "client-server",
+        "nodeType": "start",
+        "name": "find_rain_details",
+        "outputs": 1,
+        "inputVariables": [
+            {
+                "key": "latitude",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            },
+            {
+                "key": "longitude",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            },
+            {
+                "key": "start_date",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            },
+            {
+                "key": "end_date",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            }
+        ],
+        "localVariables": [
+            {
+                "key": "response",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": true
+            }
+        ],
+        "accept_bh": false,
+        "functionName": "findRainDetails",
+        "category": "General",
+        "x": 245,
+        "y": 80,
+        "wires": [
+            [
+                "sd_8QMEKtI3ONAvsdtM"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": true,
+        "serviceName": "flows"
+    },
+    {
+        "id": "sd_h7sSImAZg0BVxCDV",
+        "type": "ServerHttpRequest",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "server",
+        "nodeType": "flow",
+        "name": "fetch rain results",
+        "method": "get",
+        "methodMappingObj": {},
+        "urlMapping": "bh.local.url",
+        "urlMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "url"
+        },
+        "ret": "json",
+        "retMappingObj": {},
+        "reqBody": "bh.local.response",
+        "reqBodyObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "response"
+        },
+        "resultMapping": "bh.local.response",
+        "resultMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "response"
+        },
+        "headers": {},
+        "headersObj": [],
+        "headerMappingObj": {},
+        "params": {},
+        "paramsObj": [],
+        "paramMappingObj": {},
+        "useAuthTypeMappingObj": {},
+        "useAuthUsername": "",
+        "useAuthUsernameMappingObj": "",
+        "useAuthPassword": "",
+        "useAuthPasswordMappingObj": "",
+        "useAuthToken": "",
+        "useAuthTokenMappingObj": "",
+        "useQueryString": false,
+        "tls": "",
+        "followRedirect": true,
+        "paytoqs": false,
+        "useAuthentication": false,
+        "rejectUnauthorized": false,
+        "proxy": "",
+        "useProxy": false,
+        "usetls": false,
+        "cookiesMapObj": {},
+        "cookiesList": {},
+        "switchStates": {
+            "cookies": "Map"
+        },
+        "editableListData": {},
+        "timeout": {
+            "type": "num",
+            "value": ""
+        },
+        "functionName": "fetchRainResults",
+        "category": "HTTP",
+        "x": 565,
+        "y": 80,
+        "wires": [
+            []
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_8QMEKtI3ONAvsdtM",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "bh.local.url = `https://archive-api.open-meteo.com/v1/archive?\nlatitude=${bh.input.latitude}\n&longitude=${bh.input.longitude}\n&start_date=${bh.input.start_date}\n&end_date=${bh.input.end_date}\n&daily=precipitation_sum\n&timezone=auto\n`\n",
+        "functionName": "sd_8QMEKtI3ONAvsdtM",
+        "category": "Function",
+        "x": 385,
+        "y": 80,
+        "wires": [
+            [
+                "sd_h7sSImAZg0BVxCDV"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_GdEvNxifylXtABJz",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "bh.local.url = `https://flood-api.open-meteo.com/v1/flood?` +\n  `latitude=${bh.input.latitude}` +\n  `&longitude=${bh.input.longitude}` +\n  `&start_date=${bh.input.start_date}` +\n  `&end_date=${bh.input.end_date}` +\n  `&daily=river_discharge_mean` +\n  `&timezone=auto`;\n\nconsole.log('going to trigger')",
+        "functionName": "sd_GdEvNxifylXtABJz",
+        "category": "Function",
+        "x": 385,
+        "y": 220,
+        "wires": [
+            [
+                "sd_ygCEYZEewfdT7Va0"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_ygCEYZEewfdT7Va0",
+        "type": "ServerHttpRequest",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "server",
+        "nodeType": "flow",
+        "name": "",
+        "method": "get",
+        "methodMapping": "",
+        "methodMappingObj": {},
+        "urlMapping": "bh.local.url",
+        "urlMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "url"
+        },
+        "ret": "json",
+        "retMapping": "",
+        "retMappingObj": {},
+        "reqBody": "",
+        "reqBodyObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": ""
+        },
+        "resultMapping": "bh.local.response",
+        "resultMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "response"
+        },
+        "headers": {},
+        "headersObj": [],
+        "headerMapping": "",
+        "headerMappingObj": {},
+        "params": {},
+        "paramsObj": [],
+        "paramMapping": "",
+        "paramMappingObj": {},
+        "authType": "",
+        "useAuthTypeMappingObj": {},
+        "useAuthTypeMap": {},
+        "useAuthType": "",
+        "useAuthUsername": "",
+        "useAuthUsernameMappingObj": "",
+        "useAuthPassword": "",
+        "useAuthPasswordMappingObj": "",
+        "useAuthToken": "",
+        "useAuthTokenMappingObj": "",
+        "useQueryString": false,
+        "tls": "",
+        "followRedirect": true,
+        "paytoqs": false,
+        "useAuthentication": false,
+        "rejectUnauthorized": false,
+        "proxy": "",
+        "useProxy": false,
+        "usetls": false,
+        "cookies": [],
+        "cookiesMapObj": {},
+        "cookiesList": {},
+        "switchStates": {
+            "cookies": "Map"
+        },
+        "editableListData": {},
+        "timeout": {
+            "type": "num",
+            "value": ""
+        },
+        "functionName": "sd_ygCEYZEewfdT7Va0",
+        "category": "HTTP",
+        "x": 565,
+        "y": 220,
+        "wires": [
+            []
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_Tn7fQLjAWvKLrK31",
+        "type": "Start",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "client-server",
+        "nodeType": "start",
+        "name": "find_flood_details",
+        "outputs": 1,
+        "inputVariables": [
+            {
+                "key": "latitude",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            },
+            {
+                "key": "longitude",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            },
+            {
+                "key": "start_date",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            },
+            {
+                "key": "end_date",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            }
+        ],
+        "localVariables": [
+            {
+                "key": "response",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": true
+            }
+        ],
+        "accept_bh": false,
+        "functionName": "findFloodDetails",
+        "category": "General",
+        "x": 245,
+        "y": 220,
+        "wires": [
+            [
+                "sd_GdEvNxifylXtABJz"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": true,
+        "serviceName": "flows"
+    },
+    {
+        "id": "sd_iRHOiJmaMTmhMFaa",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "bh.local.url = `https://api.open-meteo.com/v1/forecast?` +\n  `latitude=${bh.input.latitude}` +\n  `&longitude=${bh.input.longitude}` +\n  `&hourly=wind_speed_10m,wind_gusts_10m,pressure_msl` +\n  `&timezone=auto`;\n",
+        "functionName": "sd_iRHOiJmaMTmhMFaa",
+        "category": "Function",
+        "x": 385,
+        "y": 380,
+        "wires": [
+            [
+                "sd_nfGyxZpFmPFrvnpx"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_nfGyxZpFmPFrvnpx",
+        "type": "ServerHttpRequest",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "server",
+        "nodeType": "flow",
+        "name": "",
+        "method": "get",
+        "methodMapping": "",
+        "methodMappingObj": {},
+        "urlMapping": "bh.local.url",
+        "urlMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "url"
+        },
+        "ret": "json",
+        "retMapping": "",
+        "retMappingObj": {},
+        "reqBody": "",
+        "reqBodyObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": ""
+        },
+        "resultMapping": "bh.local.response",
+        "resultMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "response"
+        },
+        "headers": {},
+        "headersObj": [],
+        "headerMapping": "",
+        "headerMappingObj": {},
+        "params": {},
+        "paramsObj": [],
+        "paramMapping": "",
+        "paramMappingObj": {},
+        "authType": "",
+        "useAuthTypeMappingObj": {},
+        "useAuthTypeMap": {},
+        "useAuthType": "",
+        "useAuthUsername": "",
+        "useAuthUsernameMappingObj": "",
+        "useAuthPassword": "",
+        "useAuthPasswordMappingObj": "",
+        "useAuthToken": "",
+        "useAuthTokenMappingObj": "",
+        "useQueryString": false,
+        "tls": "",
+        "followRedirect": true,
+        "paytoqs": false,
+        "useAuthentication": false,
+        "rejectUnauthorized": false,
+        "proxy": "",
+        "useProxy": false,
+        "usetls": false,
+        "cookies": [],
+        "cookiesMapObj": {},
+        "cookiesList": {},
+        "switchStates": {
+            "cookies": "Map"
+        },
+        "editableListData": {},
+        "timeout": {
+            "type": "num",
+            "value": ""
+        },
+        "functionName": "sd_nfGyxZpFmPFrvnpx",
+        "category": "HTTP",
+        "x": 565,
+        "y": 380,
+        "wires": [
+            []
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_B8Qzt8JTMh7LQj2N",
+        "type": "Start",
+        "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+        "viewType": "client-server",
+        "nodeType": "start",
+        "name": "find_cyclone_details",
+        "outputs": 1,
+        "inputVariables": [
+            {
+                "key": "latitude",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            },
+            {
+                "key": "longitude",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            }
+        ],
+        "localVariables": [
+            {
+                "key": "response",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": true
+            }
+        ],
+        "accept_bh": false,
+        "functionName": "findCycloneDetails",
+        "category": "General",
+        "x": 245,
+        "y": 380,
+        "wires": [
+            [
+                "sd_iRHOiJmaMTmhMFaa"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": true,
+        "serviceName": "flows"
+    }
+]

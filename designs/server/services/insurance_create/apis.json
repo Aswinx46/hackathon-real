@@ -1,0 +1,207 @@
+[
+    {
+        "id": "SSD_SERVICE_ID_sd_9TY22ZbJgz9HuiNI",
+        "type": "tab",
+        "createdDate": "2025-12-13T13:32:15.484Z",
+        "label": "apis",
+        "disabled": false,
+        "info": "",
+        "functionSeq": 0,
+        "generateNext": true,
+        "serviceName": "apis",
+        "relativeParentPath": "insurance_create"
+    },
+    {
+        "id": "sd_It4O9Ile8xMAaDiO",
+        "type": "HttpIn",
+        "z": "SSD_SERVICE_ID_sd_9TY22ZbJgz9HuiNI",
+        "viewType": "server",
+        "nodeType": "start",
+        "name": "insurance-creation",
+        "path": "/insurance/create",
+        "uploadpath": "",
+        "summary": "",
+        "description": "",
+        "method": "post",
+        "sequenceId": "",
+        "consumes": "",
+        "produces": "",
+        "filetype": "path",
+        "acceptFileUpload": false,
+        "useDataModel": false,
+        "dataModelIsArray": false,
+        "uploadFileOptions": "",
+        "erd": "",
+        "erdName": "",
+        "entity": "",
+        "entityId": "",
+        "ref": "",
+        "editableListData": {
+            "responses": [],
+            "params": [],
+            "produces": [],
+            "consumes": []
+        },
+        "inputs": 0,
+        "outputs": 1,
+        "validateRequestUsingSwaggerDocs": false,
+        "category": "HTTP",
+        "x": 205,
+        "y": 140,
+        "wires": [
+            [
+                "sd_0sazLItNXhqUPMCt"
+            ]
+        ],
+        "__ssdTypeInputs__": {
+            "uploadpath": {
+                "type": "str",
+                "value": "",
+                "nullable": "true",
+                "nullableValue": "",
+                "constant": false
+            }
+        },
+        "__n_excludedFromValidation__": {},
+        "generateNext": true,
+        "serviceName": "apis",
+        "functionName": "sd_It4O9Ile8xMAaDiO"
+    },
+    {
+        "id": "sd_r3rw3eFtHxRJ5jg0",
+        "type": "HttpOut",
+        "z": "SSD_SERVICE_ID_sd_9TY22ZbJgz9HuiNI",
+        "viewType": "server",
+        "nodeType": "flow",
+        "name": "",
+        "headers": {},
+        "responseBody": {
+            "type": "bh.local",
+            "value": "response",
+            "ssd_typedInputField": true
+        },
+        "httpcode": {
+            "type": "num",
+            "value": 200,
+            "ssd_typedInputField": true
+        },
+        "responseType": "obj",
+        "swaggerResponse": {},
+        "responseMapping": {
+            "status": 200,
+            "obj": "bh.local.response",
+            "send": "bh.local.response"
+        },
+        "dataModelIsArray": false,
+        "cookies": [],
+        "inputs": 1,
+        "outputs": 0,
+        "erd": "",
+        "entity": "",
+        "entityId": "",
+        "ref": "",
+        "editableListData": {
+            "headers": [],
+            "produces": [],
+            "responses": []
+        },
+        "cookiesList": {},
+        "switchStates": {
+            "headers": "Map",
+            "cookies": "Map"
+        },
+        "functionName": "sd_r3rw3eFtHxRJ5jg0",
+        "category": "HTTP",
+        "x": 625,
+        "y": 140,
+        "wires": [],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "apis",
+        "generated": true
+    },
+    {
+        "id": "sd_0sazLItNXhqUPMCt",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_9TY22ZbJgz9HuiNI",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "input validation",
+        "script": "console.log('this is the body',bh.input.body)",
+        "functionName": "inputValidation",
+        "category": "Function",
+        "x": 345,
+        "y": 140,
+        "wires": [
+            [
+                "sd_woS3npOo9SKFSvlz"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "apis",
+        "generated": true
+    },
+    {
+        "id": "sd_woS3npOo9SKFSvlz",
+        "type": "CallService",
+        "z": "SSD_SERVICE_ID_sd_9TY22ZbJgz9HuiNI",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "outputs": 1,
+        "isValidNode": true,
+        "noerr": 0,
+        "service": {
+            "id": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+            "type": "tab",
+            "createdDate": "2025-12-13T13:32:17.467Z",
+            "label": "flows",
+            "disabled": false,
+            "info": "",
+            "functionSeq": 0
+        },
+        "flow": {
+            "flowId": "sd_JP3fbnn9vfKzBUpm",
+            "flowName": "insuranceCreation"
+        },
+        "inputVariables": [
+            {
+                "key": "data",
+                "map": true,
+                "valueType": "bh.input",
+                "value": "body"
+            }
+        ],
+        "bhVariables": [],
+        "outputMapping": [
+            {
+                "mapVarType": "local",
+                "key": "response",
+                "valueType": "bh.local",
+                "value": "response",
+                "mapVarName": "response",
+                "localVar": "bh.local.response"
+            }
+        ],
+        "callService": "./flows",
+        "startName": "insuranceCreation",
+        "inputParams": [
+            "bh.input.body"
+        ],
+        "accept_bh": false,
+        "functionName": "sd_woS3npOo9SKFSvlz",
+        "category": "General",
+        "x": 505,
+        "y": 140,
+        "wires": [
+            [
+                "sd_r3rw3eFtHxRJ5jg0"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "apis",
+        "generated": true
+    }
+]

@@ -1,0 +1,540 @@
+[
+    {
+        "id": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "type": "tab",
+        "createdDate": "2025-12-13T13:32:17.467Z",
+        "label": "flows",
+        "disabled": false,
+        "info": "",
+        "functionSeq": 0,
+        "generateNext": true,
+        "serviceName": "flows",
+        "relativeParentPath": "insurance_create"
+    },
+    {
+        "id": "sd_JP3fbnn9vfKzBUpm",
+        "type": "Start",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "client-server",
+        "nodeType": "start",
+        "name": "insurance-creation",
+        "outputs": 1,
+        "inputVariables": [
+            {
+                "key": "data",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            }
+        ],
+        "localVariables": [
+            {
+                "key": "response",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": true
+            }
+        ],
+        "accept_bh": false,
+        "functionName": "insuranceCreation",
+        "category": "General",
+        "x": 145,
+        "y": 180,
+        "wires": [
+            [
+                "sd_M56KBI0GGu0PJCNo"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": true,
+        "serviceName": "flows"
+    },
+    {
+        "id": "sd_M56KBI0GGu0PJCNo",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "",
+        "functionName": "sd_M56KBI0GGu0PJCNo",
+        "category": "Function",
+        "x": 285,
+        "y": 180,
+        "wires": [
+            [
+                "sd_Pb7RzEzOOExbwxNG"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_Pb7RzEzOOExbwxNG",
+        "type": "Async",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "client-server",
+        "nodeType": "flow",
+        "name": "",
+        "flowNodes": [
+            {
+                "id": "sd_cDMb8lwTpULyj0BU",
+                "type": "Start",
+                "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "viewType": "client-server",
+                "nodeType": "start",
+                "name": "find_rain_details",
+                "outputs": 1,
+                "inputVariables": [
+                    {
+                        "key": "latitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.latitude"
+                    },
+                    {
+                        "key": "longitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.longitude"
+                    },
+                    {
+                        "key": "start_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.start_date"
+                    },
+                    {
+                        "key": "end_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.end_date"
+                    }
+                ],
+                "localVariables": [
+                    {
+                        "key": "response",
+                        "defaultValue": {
+                            "type": "any",
+                            "value": ""
+                        },
+                        "output": true
+                    }
+                ],
+                "accept_bh": false,
+                "functionName": "findRainDetails",
+                "category": "General",
+                "x": 245,
+                "y": 80,
+                "wires": [
+                    [
+                        "sd_8QMEKtI3ONAvsdtM"
+                    ]
+                ],
+                "__n_excludedFromValidation__": {},
+                "_imported_service_designer_type": "server",
+                "editorTabConfigType": "server",
+                "flowId": "sd_cDMb8lwTpULyj0BU",
+                "serviceId": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "serviceName": "flows",
+                "randomVal": 667765,
+                "inputParams": [
+                    "bh.input.data.latitude",
+                    "bh.input.data.longitude",
+                    "bh.input.data.start_date",
+                    "bh.input.data.end_date"
+                ],
+                "relativePath": "../weather_apis/flows"
+            },
+            {
+                "id": "sd_Tn7fQLjAWvKLrK31",
+                "type": "Start",
+                "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "viewType": "client-server",
+                "nodeType": "start",
+                "name": "find_flood_details",
+                "outputs": 1,
+                "inputVariables": [
+                    {
+                        "key": "latitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.latitude"
+                    },
+                    {
+                        "key": "longitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.longitude"
+                    },
+                    {
+                        "key": "start_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.start_date"
+                    },
+                    {
+                        "key": "end_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.end_date"
+                    }
+                ],
+                "localVariables": [
+                    {
+                        "key": "response",
+                        "defaultValue": {
+                            "type": "any",
+                            "value": ""
+                        },
+                        "output": true
+                    }
+                ],
+                "accept_bh": false,
+                "functionName": "findFloodDetails",
+                "category": "General",
+                "x": 245,
+                "y": 220,
+                "wires": [
+                    [
+                        "sd_GdEvNxifylXtABJz"
+                    ]
+                ],
+                "__n_excludedFromValidation__": {},
+                "_imported_service_designer_type": "server",
+                "editorTabConfigType": "server",
+                "flowId": "sd_Tn7fQLjAWvKLrK31",
+                "serviceId": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "serviceName": "flows",
+                "randomVal": 13880,
+                "inputParams": [
+                    "bh.input.data.latitude",
+                    "bh.input.data.longitude",
+                    "bh.input.data.start_date",
+                    "bh.input.data.end_date"
+                ],
+                "relativePath": "../weather_apis/flows"
+            },
+            {
+                "id": "sd_B8Qzt8JTMh7LQj2N",
+                "type": "Start",
+                "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "viewType": "client-server",
+                "nodeType": "start",
+                "name": "find_cyclone_details",
+                "outputs": 1,
+                "inputVariables": [
+                    {
+                        "key": "latitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.latitude"
+                    },
+                    {
+                        "key": "longitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.longitude"
+                    }
+                ],
+                "localVariables": [
+                    {
+                        "key": "response",
+                        "defaultValue": {
+                            "type": "any",
+                            "value": ""
+                        },
+                        "output": true
+                    }
+                ],
+                "accept_bh": false,
+                "functionName": "findCycloneDetails",
+                "category": "General",
+                "x": 245,
+                "y": 380,
+                "wires": [
+                    [
+                        "sd_iRHOiJmaMTmhMFaa"
+                    ]
+                ],
+                "__n_excludedFromValidation__": {},
+                "_imported_service_designer_type": "server",
+                "editorTabConfigType": "server",
+                "flowId": "sd_B8Qzt8JTMh7LQj2N",
+                "serviceId": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "serviceName": "flows",
+                "randomVal": 199378,
+                "inputParams": [
+                    "bh.input.data.latitude",
+                    "bh.input.data.longitude"
+                ],
+                "relativePath": "../weather_apis/flows"
+            }
+        ],
+        "_flowNodes": [
+            {
+                "id": "sd_cDMb8lwTpULyj0BU",
+                "type": "Start",
+                "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "viewType": "client-server",
+                "nodeType": "start",
+                "name": "find_rain_details",
+                "outputs": 1,
+                "inputVariables": [
+                    {
+                        "key": "latitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.latitude"
+                    },
+                    {
+                        "key": "longitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.longitude"
+                    },
+                    {
+                        "key": "start_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.start_date"
+                    },
+                    {
+                        "key": "end_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.end_date"
+                    }
+                ],
+                "localVariables": [
+                    {
+                        "key": "response",
+                        "defaultValue": {
+                            "type": "any",
+                            "value": ""
+                        },
+                        "output": true
+                    }
+                ],
+                "accept_bh": false,
+                "functionName": "findRainDetails",
+                "category": "General",
+                "x": 245,
+                "y": 80,
+                "wires": [
+                    [
+                        "sd_8QMEKtI3ONAvsdtM"
+                    ]
+                ],
+                "__n_excludedFromValidation__": {},
+                "_imported_service_designer_type": "server",
+                "editorTabConfigType": "server",
+                "flowId": "sd_cDMb8lwTpULyj0BU",
+                "serviceId": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "serviceName": "flows",
+                "randomVal": 667765,
+                "inputParams": [
+                    "bh.input.data.latitude",
+                    "bh.input.data.longitude",
+                    "bh.input.data.start_date",
+                    "bh.input.data.end_date"
+                ],
+                "relativePath": "../weather_apis/flows"
+            },
+            {
+                "id": "sd_Tn7fQLjAWvKLrK31",
+                "type": "Start",
+                "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "viewType": "client-server",
+                "nodeType": "start",
+                "name": "find_flood_details",
+                "outputs": 1,
+                "inputVariables": [
+                    {
+                        "key": "latitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.latitude"
+                    },
+                    {
+                        "key": "longitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.longitude"
+                    },
+                    {
+                        "key": "start_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.start_date"
+                    },
+                    {
+                        "key": "end_date",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.end_date"
+                    }
+                ],
+                "localVariables": [
+                    {
+                        "key": "response",
+                        "defaultValue": {
+                            "type": "any",
+                            "value": ""
+                        },
+                        "output": true
+                    }
+                ],
+                "accept_bh": false,
+                "functionName": "findFloodDetails",
+                "category": "General",
+                "x": 245,
+                "y": 220,
+                "wires": [
+                    [
+                        "sd_GdEvNxifylXtABJz"
+                    ]
+                ],
+                "__n_excludedFromValidation__": {},
+                "_imported_service_designer_type": "server",
+                "editorTabConfigType": "server",
+                "flowId": "sd_Tn7fQLjAWvKLrK31",
+                "serviceId": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "serviceName": "flows",
+                "randomVal": 13880,
+                "inputParams": [
+                    "bh.input.data.latitude",
+                    "bh.input.data.longitude",
+                    "bh.input.data.start_date",
+                    "bh.input.data.end_date"
+                ],
+                "relativePath": "../weather_apis/flows"
+            },
+            {
+                "id": "sd_B8Qzt8JTMh7LQj2N",
+                "type": "Start",
+                "z": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "viewType": "client-server",
+                "nodeType": "start",
+                "name": "find_cyclone_details",
+                "outputs": 1,
+                "inputVariables": [
+                    {
+                        "key": "latitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.latitude"
+                    },
+                    {
+                        "key": "longitude",
+                        "map": true,
+                        "valueType": "bh.input",
+                        "value": "data.longitude"
+                    }
+                ],
+                "localVariables": [
+                    {
+                        "key": "response",
+                        "defaultValue": {
+                            "type": "any",
+                            "value": ""
+                        },
+                        "output": true
+                    }
+                ],
+                "accept_bh": false,
+                "functionName": "findCycloneDetails",
+                "category": "General",
+                "x": 245,
+                "y": 380,
+                "wires": [
+                    [
+                        "sd_iRHOiJmaMTmhMFaa"
+                    ]
+                ],
+                "__n_excludedFromValidation__": {},
+                "_imported_service_designer_type": "server",
+                "editorTabConfigType": "server",
+                "flowId": "sd_B8Qzt8JTMh7LQj2N",
+                "serviceId": "SSD_SERVICE_ID_sd_UyJmuY2RjioRk8Ny",
+                "serviceName": "flows",
+                "randomVal": 199378,
+                "inputParams": [
+                    "bh.input.data.latitude",
+                    "bh.input.data.longitude"
+                ],
+                "relativePath": "../weather_apis/flows"
+            }
+        ],
+        "resultMapping": "bh.local.async_response",
+        "isValidNode": true,
+        "functionName": "sd_Pb7RzEzOOExbwxNG",
+        "category": "Function",
+        "x": 425,
+        "y": 180,
+        "wires": [
+            [
+                "sd_IW7yHaOdFd12yiPm"
+            ]
+        ],
+        "__ssdTypeInputs__": {
+            "resultMapping": {
+                "type": "bh.local",
+                "value": "async_response",
+                "constant": false
+            }
+        },
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_IW7yHaOdFd12yiPm",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "rainfallData",
+        "script": "const response = bh.local.async_response.map((item) => item.local.response.payload)\n// console.log('this is the response from async result',response)\n\nconst rainDataObj = response[0];\nconst floodDataObj = response[1];\nconst cycloneDataObj = response[2];\n\n\n\nfunction categorize(value, thresholds) {\n  if (value <= thresholds.low) return \"LOW\";\n  if (value <= thresholds.medium) return \"MEDIUM\";\n  return \"HIGH\";\n}\n\nfunction riskToScore(risk) {\n  if (risk === \"LOW\") return 1;\n  if (risk === \"MEDIUM\") return 2;\n  return 3;\n}\n\nfunction aggregateHourlyToDaily(hourly) {\n  const daily = {};\n\n  hourly.time.forEach((t, i) => {\n    const date = t.split(\"T\")[0];\n    if (!daily[date]) {\n      daily[date] = {\n        windGusts: [],\n        windSpeed: [],\n        pressure: []\n      };\n    }\n\n    daily[date].windGusts.push(hourly.wind_gusts_10m[i]);\n    daily[date].windSpeed.push(hourly.wind_speed_10m[i]);\n    daily[date].pressure.push(hourly.pressure_msl[i]);\n  });\n\n  return daily;\n}\n\nfunction groupDailyToMonthly(dailyObj, valueKey) {\n  const monthly = {};\n\n  dailyObj.time.forEach((dateStr, i) => {\n    const month = new Date(dateStr).toLocaleString(\"default\", {\n      month: \"long\",\n      year: \"numeric\"\n    });\n\n    if (!monthly[month]) monthly[month] = [];\n    monthly[month].push(dailyObj[valueKey][i]);\n  });\n\n  return monthly;\n}\n\nfunction safeSum(arr) {\n  return arr.length ? arr.reduce((a, b) => a + b, 0) : 0;\n}\n\nfunction safeAvg(arr) {\n  return arr.length ? safeSum(arr) / arr.length : 0;\n}\n\nfunction safeMax(arr) {\n  return arr.length ? Math.max(...arr) : 0;\n}\n\nfunction calculateMonthlyRisk({\n  location,\n  month,\n  rainfallValues = [],\n  floodValues = [],\n  cycloneDailyValues\n}) {\n  // --- Rain ---\n  const totalRainfall = safeSum(rainfallValues);\n  // console.log('this is the total rainfall',totalRainfall)\n  const rainyDays = rainfallValues.filter(r => r > 2).length;\n  const extremeRainDays = rainfallValues.filter(r => r > 50).length;\n  const rainRisk = categorize(totalRainfall, { high: 150, medium: 50 });\n\n  // --- Flood ---\n  const peakRiverDischarge = safeMax(floodValues);\n  const avgRiverDischarge = safeAvg(floodValues);\n  const floodDays = floodValues.filter(f => f > 500).length;\n  // console.log('this is the peakriverDischarge',peakRiverDischarge)\n  const floodRisk = categorize(peakRiverDischarge, { high: 4, medium: 2 });\n\n  // --- Cyclone ---\n  const maxWindGust = safeMax(cycloneDailyValues.windGusts);\n  const avgWindSpeed = safeAvg(cycloneDailyValues.windSpeed);\n  const lowPressureDays =\n    cycloneDailyValues.pressure?.filter(p => p < 1000).length || 0;\n  const stormRisk = categorize(maxWindGust, { low: 40, medium: 70 });\n\n  // --- Combined Score (max = 9) ---\n  const combinedScore =\n    riskToScore(rainRisk) +\n    riskToScore(floodRisk) +\n    riskToScore(stormRisk);\n\n  return {\n    location,\n    month,\n    monthIndex: new Date(month).getMonth() + 1,\n    riskIndicators: { rainRisk, floodRisk, stormRisk },\n    combinedScore,\n    metrics: {\n      totalRainfall,\n      rainyDays,\n      extremeRainDays,\n      avgRiverDischarge,\n      peakRiverDischarge,\n      floodDays,\n      avgWindSpeed,\n      maxWindGust,\n      lowPressureDays\n    }\n  };\n}\n\n\nfunction generateAIPayload({\n  location,\n  monthlyRiskData\n}) {\n  // Filter ONLY high-risk months (already filtered, but double-check)\n  // console.log('this is the monthly risk data', monthlyRiskData)\n  const highRiskMonths = monthlyRiskData.filter(item => item.combinedScore >= 2);\n  const sortedHighRisk = highRiskMonths.sort((a, b) => b.combinedScore - a.combinedScore);\n  \n\n  return {\n    evaluation_context: {\n      purpose: \"Dynamic Insurance Coverage Activation\",\n      location: {\n        latitude: location.latitude,\n        longitude: location.longitude,\n        description: \"User location coordinates for hazard analysis\"\n      },\n      risk_model: {\n        type: \"multi-hazard\",\n        hazards_analyzed: [\"rain\", \"flood\", \"cyclone\"],\n        score_range: { low: 1, medium: 2, high: 3, max: 9 },\n        threshold: { activate_coverage: 2, optional_topup: 2 }\n      },\n      analysis_period: \"Next 12 months forecast + 5-year historical baseline\"\n    },\n\n    high_risk_months: sortedHighRisk.map(item => ({\n      month: item.month,\n      monthIndex: item.monthIndex,\n      risk_level: item.riskIndicators,\n      combined_risk_score: item.combinedScore,\n\n      hazard_breakdown: {\n        rain: {\n          risk_level: item.riskIndicators.rainRisk,\n          total_rainfall_mm: item.metrics.totalRainfall,\n          rainy_days: item.metrics.rainyDays,\n          extreme_rain_days: item.metrics.extremeRainDays,\n          recommendation: item.metrics.extremeRainDays > 0 ? \"HIGH PRECIPITATION RISK\" : \"MONITOR\"\n        },\n        flood: {\n          risk_level: item.riskIndicators.floodRisk,\n          avg_discharge_m3s: item.metrics.avgRiverDischarge,\n          peak_discharge_m3s: item.metrics.peakRiverDischarge,\n          flood_days: item.metrics.floodDays,\n          recommendation: item.metrics.floodDays > 0 ? \"RIVER FLOOD RISK\" : \"ELEVATION PROTECTED\"\n        },\n        cyclone: {\n          risk_level: item.riskIndicators.stormRisk,\n          avg_wind_speed_kmh: item.metrics.avgWindSpeed,\n          max_wind_gust_kmh: item.metrics.maxWindGust,\n          low_pressure_days: item.metrics.lowPressureDays,\n          recommendation: item.metrics.maxWindGust > 50 ? \"GALE FORCE WINDS\" : \"MONITOR\"\n        }\n      }\n    })),\n\n    insurance_decision_required: {\n      action_needed: sortedHighRisk.length > 0,\n      recommended_coverage: {\n        active_months: sortedHighRisk.map(m => m.month),\n        premium_adjustment: `+${Math.round((sortedHighRisk.length / 12) * 100)}% for high-risk period`,\n        customer_notification: `Activate coverage for ${sortedHighRisk.length} high-risk months`\n      },\n      risk_summary: {\n        total_high_risk_months: sortedHighRisk.length,\n        avg_combined_score: sortedHighRisk.length > 0 ?\n          (sortedHighRisk.reduce((sum, m) => sum + m.combinedScore, 0) / sortedHighRisk.length).toFixed(1) : 0,\n        dominant_hazard: sortedHighRisk.length > 0 ?\n          Object.keys(sortedHighRisk[0].riskIndicators).find(h =>\n            sortedHighRisk[0].riskIndicators[h] === 'HIGH') || 'Mixed' : 'None'\n      }\n    }\n  };\n}\n\n\n\n\n// 🚀 CHANGED: Now returns ALL high-risk months (>=7), not just top 3\nfunction generateHighRiskMonths({\n  rainDataObj,\n  floodDataObj,\n  cycloneDataObj\n}) {\n  // Extract data\n  const dailyRain = rainDataObj.daily;\n  const dailyFlood = floodDataObj.daily;\n  const hourlyCyclone = cycloneDataObj.hourly;\n\n  // Step 1: Convert cyclone hourly → daily\n  const cycloneDaily = aggregateHourlyToDaily(hourlyCyclone);\n\n  // Step 2: Group rain & flood by month\n  const monthlyRain = groupDailyToMonthly(dailyRain, \"precipitation_sum\");\n  const monthlyFlood = groupDailyToMonthly(\n    dailyFlood,\n    \"river_discharge_mean\"\n  );\n  // console.log('monthlyRain', monthlyRain)\n  // console.log('monthlyFlood', monthlyFlood)\n  // Step 3: Build ALL monthly risk objects\n  const monthlyRisk = [];\n\n  Object.keys(monthlyRain).forEach(month => {\n    const cycloneForMonth = { windGusts: [], windSpeed: [], pressure: [] };\n\n    Object.keys(cycloneDaily).forEach(date => {\n      const dateMonth = new Date(date).toLocaleString(\"default\", {\n        month: \"long\", year: \"numeric\"\n      });\n\n      if (dateMonth === month) {\n        cycloneForMonth.windGusts.push(Math.max(...cycloneDaily[date].windGusts));\n        cycloneForMonth.windSpeed.push(\n          cycloneDaily[date].windSpeed.reduce((a, b) => a + b, 0) /\n          cycloneDaily[date].windSpeed.length\n        );\n        cycloneForMonth.pressure.push(Math.min(...cycloneDaily[date].pressure));\n      }\n    });\n\n    // ✅ FIXED: Use defaults for historical months\n    if (!cycloneForMonth.windGusts.length) {\n      cycloneForMonth.windGusts = [20];\n      cycloneForMonth.windSpeed = [10];\n      cycloneForMonth.pressure = [1013];\n    }\n\n    monthlyRisk.push(calculateMonthlyRisk({\n      location: { latitude: rainDataObj.latitude, longitude: rainDataObj.longitude },\n      month,\n      rainfallValues: monthlyRain[month],\n      floodValues: monthlyFlood[month] || [],\n      cycloneDailyValues: cycloneForMonth\n    }));\n  });\n  \n\n  // 🚀 CHANGED: Filter ONLY high-risk months (>=7) and sort by risk\n  return monthlyRisk\n    .filter(item => item.combinedScore >= 3)  // ONLY high-risk months\n    .sort((a, b) => b.combinedScore - a.combinedScore);  // Highest risk first\n}\n\n// 🚀 UPDATED: Now generates high-risk months for AI payload\nconst highRiskMonths = generateHighRiskMonths({\n  rainDataObj,\n  floodDataObj,\n  cycloneDataObj\n});\n\n// console.log('this is the rainDataObj',rainDataObj)\n// console.log('this is the floodDataObj',floodDataObj)\n// console.log('this is the cycloneDataObj',cycloneDataObj)\n\n// console.log(\"High Risk Months (Score >=4):\", highRiskMonths);\n\n// 🚀 READY FOR AI PAYLOAD - pass this directly to generateAIPayload\nconst aiPayload = generateAIPayload({\n  location: {\n    latitude: rainDataObj.latitude,\n    longitude: rainDataObj.longitude\n  },\n  monthlyRiskData: highRiskMonths  // Only high-risk months!\n});\n\n// console.log(\"AI Evaluation Payload:\", aiPayload);\n\nbh.local.aiPayload = aiPayload\n",
+        "functionName": "rainfallData",
+        "category": "Function",
+        "x": 540,
+        "y": 180,
+        "wires": [
+            [
+                "sd_PiaDQfAlchrSPYEh"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_PiaDQfAlchrSPYEh",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "const GEMINI_API_KEY = process.env.GEMINI_API_KEY;\n\nconst url =\n  \"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\" +\n  GEMINI_API_KEY;\n\nconst prompt = `\nYou are an insurance risk analyst.\nReturn ONLY JSON.\n\nDATA:\n${JSON.stringify(bh.local.aiPayload)}\n`;\n\nconst body = {\n  contents: [\n    {\n      parts: [{ text: prompt }]\n    }\n  ],\n  generationConfig: {\n    responseMimeType: \"application/json\"\n  }\n};\n\nasync function callGemini() {\n  const response = await fetch(url, {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\"\n    },\n    body: JSON.stringify(body)\n  });\n\n  const data = await response.json();\n\n  // Gemini response parsing\n  const text =\n    data.candidates?.[0]?.content?.parts?.[0]?.text;\n\n  return JSON.parse(text);\n}\n\ncallGemini()\n  .then(result => console.log(\"AI Result:\", result))\n  .catch(err => console.error(err));\n",
+        "functionName": "sd_PiaDQfAlchrSPYEh",
+        "category": "Function",
+        "x": 700,
+        "y": 180,
+        "wires": [
+            []
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    }
+]

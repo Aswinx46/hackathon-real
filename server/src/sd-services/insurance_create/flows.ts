@@ -123,6 +123,41 @@ export class flows {
       );
     }
   }
+
+  async callReels(parentSpanInst, data: any = undefined, ...others) {
+    const spanInst = this.tracerService.createSpan('callReels', parentSpanInst);
+    let bh: any = {
+      input: {
+        data,
+      },
+      local: {
+        response: undefined,
+      },
+    };
+    try {
+      bh = this.sdService.__constructDefault(bh);
+      this.tracerService.sendData(spanInst, bh);
+      bh = await this.sd_X3YQPZQsOmICe8dE(bh, parentSpanInst);
+      //appendnew_next_callReels
+      return (
+        // formatting output variables
+        {
+          input: {},
+          local: {
+            response: bh.local.response,
+          },
+        }
+      );
+    } catch (e) {
+      return await this.errorHandler(
+        bh,
+        e,
+        'sd_uEBLLkNkl7dJLNU8',
+        spanInst,
+        'callReels'
+      );
+    }
+  }
   //appendnew_flow_flows_start
 
   async sd_M56KBI0GGu0PJCNo(bh, parentSpanInst) {
@@ -330,6 +365,32 @@ export class flows {
         };
       }
 
+      function keepMostCommonMonths(highRiskMonths) {
+        const byMonthName = {};
+
+        for (const item of highRiskMonths) {
+          // Convert "May 2024" -> "May"
+          const monthName = new Date(item.month).toLocaleString('default', {
+            month: 'long',
+          });
+
+          if (!byMonthName[monthName]) {
+            byMonthName[monthName] = [];
+          }
+          byMonthName[monthName].push(item);
+        }
+
+        // For each month name, keep the highest combinedScore (or whatever rule you want)
+        const picked = Object.values(byMonthName).map((listForMonth) => {
+          return listForMonth.sort(
+            (a, b) => b.combinedScore - a.combinedScore
+          )[0];
+        });
+
+        // Optional: sort back in calendar order by monthIndex
+        return picked.sort((a, b) => a.monthIndex - b.monthIndex);
+      }
+
       function generateAIPayload({ location, monthlyRiskData }) {
         // Filter ONLY high-risk months (already filtered, but double-check)
         // console.log('this is the monthly risk data', monthlyRiskData)
@@ -514,6 +575,39 @@ export class flows {
         floodDataObj,
         cycloneDataObj,
       });
+      const condensedHighRiskMonths = keepMostCommonMonths(highRiskMonths);
+
+      function pickTopRiskMonths(highRiskMonths, topN = 5) {
+        const byMonthName = {};
+
+        // Group by month name (Jan, Feb, ...)
+        for (const item of highRiskMonths) {
+          const monthName = new Date(item.month).toLocaleString('default', {
+            month: 'long',
+          });
+
+          if (!byMonthName[monthName]) {
+            byMonthName[monthName] = [];
+          }
+          byMonthName[monthName].push(item);
+        }
+
+        // For each month name, keep the entry with highest combinedScore
+        const onePerMonth = Object.values(byMonthName).map(
+          (listForMonth) =>
+            listForMonth.sort((a, b) => b.combinedScore - a.combinedScore)[0]
+        );
+
+        // Now sort all remaining months by risk and keep only top N
+        const topMonths = onePerMonth
+          .sort((a, b) => b.combinedScore - a.combinedScore)
+          .slice(0, topN);
+
+        // Optional: sort them in calendar order if you prefer
+        return topMonths.sort((a, b) => a.monthIndex - b.monthIndex);
+      }
+
+      const topRiskMonths = pickTopRiskMonths(highRiskMonths, 4);
 
       // console.log('this is the rainDataObj',rainDataObj)
       // console.log('this is the floodDataObj',floodDataObj)
@@ -527,15 +621,12 @@ export class flows {
           latitude: rainDataObj.latitude,
           longitude: rainDataObj.longitude,
         },
-        monthlyRiskData: highRiskMonths, // Only high-risk months!
+        monthlyRiskData: topRiskMonths,
       });
 
-      // console.log("AI Evaluation Payload:", aiPayload);
-
       bh.local.aiPayload = aiPayload;
-
       this.tracerService.sendData(spanInst, bh);
-      bh = await this.sd_PiaDQfAlchrSPYEh(bh, parentSpanInst);
+      bh = await this.callingGemini(bh, parentSpanInst);
       //appendnew_next_rainfallData
       return bh;
     } catch (e) {
@@ -549,21 +640,21 @@ export class flows {
     }
   }
 
-  async sd_PiaDQfAlchrSPYEh(bh, parentSpanInst) {
+  async callingGemini(bh, parentSpanInst) {
     const spanInst = this.tracerService.createSpan(
-      'sd_PiaDQfAlchrSPYEh',
+      'callingGemini',
       parentSpanInst
     );
     try {
       const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
       const url =
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' +
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' +
         GEMINI_API_KEY;
 
       const prompt = `
-You are an insurance risk analyst.
-Return ONLY JSON.
+You are an insurance risk analyst.include the premiumMultiplier also
+Return ONLY strict JSON. Do not include any extra text or formatting.
 
 DATA:
 ${JSON.stringify(bh.local.aiPayload)}
@@ -572,6 +663,7 @@ ${JSON.stringify(bh.local.aiPayload)}
       const body = {
         contents: [
           {
+            role: 'user',
             parts: [{ text: prompt }],
           },
         ],
@@ -589,20 +681,52 @@ ${JSON.stringify(bh.local.aiPayload)}
           body: JSON.stringify(body),
         });
 
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Gemini error ${response.status}: ${errText}`);
+        }
+
         const data = await response.json();
+        console.log('RAW GEMINI RESPONSE:', JSON.stringify(data, null, 2));
 
-        // Gemini response parsing
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const candidate = data.candidates?.[0];
+        if (!candidate) {
+          throw new Error('No candidates returned by Gemini');
+        }
 
-        return JSON.parse(text);
+        const part = candidate.content?.parts?.[0];
+        if (!part || !part.text) {
+          throw new Error('Gemini did not return text output');
+        }
+
+        // Safe JSON parse with clearer error
+        try {
+          return JSON.parse(part.text);
+        } catch (e) {
+          console.error('Model did not return valid JSON:', part.text);
+          throw new Error('Failed to parse model output as JSON');
+        }
       }
 
-      callGemini()
-        .then((result) => console.log('AI Result:', result))
-        .catch((err) => console.error(err));
+      console.log('just before');
+      async function runGemini() {
+        try {
+          const result = await callGemini();
+          console.log('AI Result:', result);
+          bh.local.aiResult = result;
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      // Call your async wrapper
+      runGemini();
+
+      console.log('just after');
 
       this.tracerService.sendData(spanInst, bh);
-      //appendnew_next_sd_PiaDQfAlchrSPYEh
+      bh = await this.sd_2cjl6gMSWjwW5SzT(bh, parentSpanInst);
+      //appendnew_next_callingGemini
       return bh;
     } catch (e) {
       return await this.errorHandler(
@@ -610,7 +734,179 @@ ${JSON.stringify(bh.local.aiPayload)}
         e,
         'sd_PiaDQfAlchrSPYEh',
         spanInst,
-        'sd_PiaDQfAlchrSPYEh'
+        'callingGemini'
+      );
+    }
+  }
+
+  async sd_2cjl6gMSWjwW5SzT(bh, parentSpanInst) {
+    const spanInst = this.tracerService.createSpan(
+      'sd_2cjl6gMSWjwW5SzT',
+      parentSpanInst
+    );
+    try {
+      setTimeout(() => {
+        if (bh.local.aiResult) {
+          bh.local.reelsPayload = {
+            weather: bh.input.data.weather,
+            location: bh.input.data.location,
+            property: bh.input.data.property,
+            basePremium: bh.input.data.basePremium,
+            premiumMultiplier: 1.33,
+            vehicleModel: bh.input.data.vehicleModel,
+            insuranceType: bh.input.data.insuranceType,
+            safetyMeasure: bh.input.data.safetyMeasure,
+            building: bh.input.data.building,
+          };
+
+          console.log('this is the result from ai', bh.local.aiResult);
+        }
+      }, 10000);
+      this.tracerService.sendData(spanInst, bh);
+      bh = await this.sd_mmmcq013WxS0bFuH(bh, parentSpanInst);
+      //appendnew_next_sd_2cjl6gMSWjwW5SzT
+      return bh;
+    } catch (e) {
+      return await this.errorHandler(
+        bh,
+        e,
+        'sd_2cjl6gMSWjwW5SzT',
+        spanInst,
+        'sd_2cjl6gMSWjwW5SzT'
+      );
+    }
+  }
+
+  async sd_mmmcq013WxS0bFuH(bh, parentSpanInst) {
+    const spanInst = this.tracerService.createSpan(
+      'sd_mmmcq013WxS0bFuH',
+      parentSpanInst
+    );
+    try {
+      let outputVariables = await this.callReels(
+        spanInst,
+        bh.local.reelsPayload
+      );
+      bh.local.response_reels = outputVariables.local.response;
+
+      this.tracerService.sendData(spanInst, bh);
+      //appendnew_next_sd_mmmcq013WxS0bFuH
+      return bh;
+    } catch (e) {
+      return await this.errorHandler(
+        bh,
+        e,
+        'sd_mmmcq013WxS0bFuH',
+        spanInst,
+        'sd_mmmcq013WxS0bFuH'
+      );
+    }
+  }
+
+  async sd_X3YQPZQsOmICe8dE(bh, parentSpanInst) {
+    const spanInst = this.tracerService.createSpan(
+      'sd_X3YQPZQsOmICe8dE',
+      parentSpanInst
+    );
+    try {
+      bh.local.body = {
+        workflowId: '5aae4a74-79a6-426d-925c-ca60ed2f31d7',
+        version: '1.0.4',
+        inputObj: bh.input.data,
+        subFlowIDs: [],
+      };
+
+      bh.local.headers = {
+        token: process.env.REELS_TOKEN,
+      };
+
+      bh.local.url =
+        'https://sandbox.neutrinos-apps.com/integration/api/runtime/sync';
+      this.tracerService.sendData(spanInst, bh);
+      bh = await this.sd_YkmV8xgZD2mrkUsp(bh, parentSpanInst);
+      //appendnew_next_sd_X3YQPZQsOmICe8dE
+      return bh;
+    } catch (e) {
+      return await this.errorHandler(
+        bh,
+        e,
+        'sd_X3YQPZQsOmICe8dE',
+        spanInst,
+        'sd_X3YQPZQsOmICe8dE'
+      );
+    }
+  }
+
+  async sd_YkmV8xgZD2mrkUsp(bh, parentSpanInst) {
+    try {
+      let requestOptions: any = {
+        url: bh.local.url,
+        timeout: 30000,
+        method: 'post',
+        headers: bh.local.headers,
+        followRedirects: true,
+        cookies: undefined,
+        authType: undefined,
+        body: bh.local.body,
+        paytoqs: false,
+        proxyConfig: undefined,
+        tlsConfig: undefined,
+        ret: 'json',
+        params: {},
+        username: undefined,
+        password: undefined,
+        token: undefined,
+        useQuerystring: false,
+      };
+      requestOptions.rejectUnauthorized = false;
+      requestOptions.tlsConfig = undefined;
+      requestOptions.proxyConfig = undefined;
+      let responseMsg: any = await this.sdService.httpRequest(
+        requestOptions.url,
+        requestOptions.timeout,
+        requestOptions.method,
+        requestOptions.headers,
+        requestOptions.followRedirects,
+        requestOptions.cookies,
+        requestOptions.authType,
+        requestOptions.body,
+        requestOptions.paytoqs,
+        requestOptions.proxyConfig,
+        requestOptions.tlsConfig,
+        requestOptions.ret,
+        requestOptions.params,
+        requestOptions.rejectUnauthorized,
+        requestOptions.username,
+        requestOptions.password,
+        requestOptions.token
+      );
+
+      bh.local.response = responseMsg;
+      bh = await this.sd_jWT8prHESEqAnGsc(bh, parentSpanInst);
+      //appendnew_next_sd_YkmV8xgZD2mrkUsp
+      return bh;
+    } catch (e) {
+      return await this.errorHandler(bh, e, 'sd_YkmV8xgZD2mrkUsp');
+    }
+  }
+
+  async sd_jWT8prHESEqAnGsc(bh, parentSpanInst) {
+    const spanInst = this.tracerService.createSpan(
+      'sd_jWT8prHESEqAnGsc',
+      parentSpanInst
+    );
+    try {
+      console.log('response from reels', bh.local.response);
+      this.tracerService.sendData(spanInst, bh);
+      //appendnew_next_sd_jWT8prHESEqAnGsc
+      return bh;
+    } catch (e) {
+      return await this.errorHandler(
+        bh,
+        e,
+        'sd_jWT8prHESEqAnGsc',
+        spanInst,
+        'sd_jWT8prHESEqAnGsc'
       );
     }
   }

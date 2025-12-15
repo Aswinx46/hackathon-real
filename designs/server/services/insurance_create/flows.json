@@ -502,7 +502,7 @@
         "viewType": "common",
         "nodeType": "flow",
         "name": "rainfallData",
-        "script": "const response = bh.local.async_response.map((item) => item.local.response.payload)\n// console.log('this is the response from async result',response)\n\nconst rainDataObj = response[0];\nconst floodDataObj = response[1];\nconst cycloneDataObj = response[2];\n\n\n\nfunction categorize(value, thresholds) {\n  if (value <= thresholds.low) return \"LOW\";\n  if (value <= thresholds.medium) return \"MEDIUM\";\n  return \"HIGH\";\n}\n\nfunction riskToScore(risk) {\n  if (risk === \"LOW\") return 1;\n  if (risk === \"MEDIUM\") return 2;\n  return 3;\n}\n\nfunction aggregateHourlyToDaily(hourly) {\n  const daily = {};\n\n  hourly.time.forEach((t, i) => {\n    const date = t.split(\"T\")[0];\n    if (!daily[date]) {\n      daily[date] = {\n        windGusts: [],\n        windSpeed: [],\n        pressure: []\n      };\n    }\n\n    daily[date].windGusts.push(hourly.wind_gusts_10m[i]);\n    daily[date].windSpeed.push(hourly.wind_speed_10m[i]);\n    daily[date].pressure.push(hourly.pressure_msl[i]);\n  });\n\n  return daily;\n}\n\nfunction groupDailyToMonthly(dailyObj, valueKey) {\n  const monthly = {};\n\n  dailyObj.time.forEach((dateStr, i) => {\n    const month = new Date(dateStr).toLocaleString(\"default\", {\n      month: \"long\",\n      year: \"numeric\"\n    });\n\n    if (!monthly[month]) monthly[month] = [];\n    monthly[month].push(dailyObj[valueKey][i]);\n  });\n\n  return monthly;\n}\n\nfunction safeSum(arr) {\n  return arr.length ? arr.reduce((a, b) => a + b, 0) : 0;\n}\n\nfunction safeAvg(arr) {\n  return arr.length ? safeSum(arr) / arr.length : 0;\n}\n\nfunction safeMax(arr) {\n  return arr.length ? Math.max(...arr) : 0;\n}\n\nfunction calculateMonthlyRisk({\n  location,\n  month,\n  rainfallValues = [],\n  floodValues = [],\n  cycloneDailyValues\n}) {\n  // --- Rain ---\n  const totalRainfall = safeSum(rainfallValues);\n  // console.log('this is the total rainfall',totalRainfall)\n  const rainyDays = rainfallValues.filter(r => r > 2).length;\n  const extremeRainDays = rainfallValues.filter(r => r > 50).length;\n  const rainRisk = categorize(totalRainfall, { high: 150, medium: 50 });\n\n  // --- Flood ---\n  const peakRiverDischarge = safeMax(floodValues);\n  const avgRiverDischarge = safeAvg(floodValues);\n  const floodDays = floodValues.filter(f => f > 500).length;\n  // console.log('this is the peakriverDischarge',peakRiverDischarge)\n  const floodRisk = categorize(peakRiverDischarge, { high: 4, medium: 2 });\n\n  // --- Cyclone ---\n  const maxWindGust = safeMax(cycloneDailyValues.windGusts);\n  const avgWindSpeed = safeAvg(cycloneDailyValues.windSpeed);\n  const lowPressureDays =\n    cycloneDailyValues.pressure?.filter(p => p < 1000).length || 0;\n  const stormRisk = categorize(maxWindGust, { low: 40, medium: 70 });\n\n  // --- Combined Score (max = 9) ---\n  const combinedScore =\n    riskToScore(rainRisk) +\n    riskToScore(floodRisk) +\n    riskToScore(stormRisk);\n\n  return {\n    location,\n    month,\n    monthIndex: new Date(month).getMonth() + 1,\n    riskIndicators: { rainRisk, floodRisk, stormRisk },\n    combinedScore,\n    metrics: {\n      totalRainfall,\n      rainyDays,\n      extremeRainDays,\n      avgRiverDischarge,\n      peakRiverDischarge,\n      floodDays,\n      avgWindSpeed,\n      maxWindGust,\n      lowPressureDays\n    }\n  };\n}\n\n\nfunction generateAIPayload({\n  location,\n  monthlyRiskData\n}) {\n  // Filter ONLY high-risk months (already filtered, but double-check)\n  // console.log('this is the monthly risk data', monthlyRiskData)\n  const highRiskMonths = monthlyRiskData.filter(item => item.combinedScore >= 2);\n  const sortedHighRisk = highRiskMonths.sort((a, b) => b.combinedScore - a.combinedScore);\n  \n\n  return {\n    evaluation_context: {\n      purpose: \"Dynamic Insurance Coverage Activation\",\n      location: {\n        latitude: location.latitude,\n        longitude: location.longitude,\n        description: \"User location coordinates for hazard analysis\"\n      },\n      risk_model: {\n        type: \"multi-hazard\",\n        hazards_analyzed: [\"rain\", \"flood\", \"cyclone\"],\n        score_range: { low: 1, medium: 2, high: 3, max: 9 },\n        threshold: { activate_coverage: 2, optional_topup: 2 }\n      },\n      analysis_period: \"Next 12 months forecast + 5-year historical baseline\"\n    },\n\n    high_risk_months: sortedHighRisk.map(item => ({\n      month: item.month,\n      monthIndex: item.monthIndex,\n      risk_level: item.riskIndicators,\n      combined_risk_score: item.combinedScore,\n\n      hazard_breakdown: {\n        rain: {\n          risk_level: item.riskIndicators.rainRisk,\n          total_rainfall_mm: item.metrics.totalRainfall,\n          rainy_days: item.metrics.rainyDays,\n          extreme_rain_days: item.metrics.extremeRainDays,\n          recommendation: item.metrics.extremeRainDays > 0 ? \"HIGH PRECIPITATION RISK\" : \"MONITOR\"\n        },\n        flood: {\n          risk_level: item.riskIndicators.floodRisk,\n          avg_discharge_m3s: item.metrics.avgRiverDischarge,\n          peak_discharge_m3s: item.metrics.peakRiverDischarge,\n          flood_days: item.metrics.floodDays,\n          recommendation: item.metrics.floodDays > 0 ? \"RIVER FLOOD RISK\" : \"ELEVATION PROTECTED\"\n        },\n        cyclone: {\n          risk_level: item.riskIndicators.stormRisk,\n          avg_wind_speed_kmh: item.metrics.avgWindSpeed,\n          max_wind_gust_kmh: item.metrics.maxWindGust,\n          low_pressure_days: item.metrics.lowPressureDays,\n          recommendation: item.metrics.maxWindGust > 50 ? \"GALE FORCE WINDS\" : \"MONITOR\"\n        }\n      }\n    })),\n\n    insurance_decision_required: {\n      action_needed: sortedHighRisk.length > 0,\n      recommended_coverage: {\n        active_months: sortedHighRisk.map(m => m.month),\n        premium_adjustment: `+${Math.round((sortedHighRisk.length / 12) * 100)}% for high-risk period`,\n        customer_notification: `Activate coverage for ${sortedHighRisk.length} high-risk months`\n      },\n      risk_summary: {\n        total_high_risk_months: sortedHighRisk.length,\n        avg_combined_score: sortedHighRisk.length > 0 ?\n          (sortedHighRisk.reduce((sum, m) => sum + m.combinedScore, 0) / sortedHighRisk.length).toFixed(1) : 0,\n        dominant_hazard: sortedHighRisk.length > 0 ?\n          Object.keys(sortedHighRisk[0].riskIndicators).find(h =>\n            sortedHighRisk[0].riskIndicators[h] === 'HIGH') || 'Mixed' : 'None'\n      }\n    }\n  };\n}\n\n\n\n\n// 🚀 CHANGED: Now returns ALL high-risk months (>=7), not just top 3\nfunction generateHighRiskMonths({\n  rainDataObj,\n  floodDataObj,\n  cycloneDataObj\n}) {\n  // Extract data\n  const dailyRain = rainDataObj.daily;\n  const dailyFlood = floodDataObj.daily;\n  const hourlyCyclone = cycloneDataObj.hourly;\n\n  // Step 1: Convert cyclone hourly → daily\n  const cycloneDaily = aggregateHourlyToDaily(hourlyCyclone);\n\n  // Step 2: Group rain & flood by month\n  const monthlyRain = groupDailyToMonthly(dailyRain, \"precipitation_sum\");\n  const monthlyFlood = groupDailyToMonthly(\n    dailyFlood,\n    \"river_discharge_mean\"\n  );\n  // console.log('monthlyRain', monthlyRain)\n  // console.log('monthlyFlood', monthlyFlood)\n  // Step 3: Build ALL monthly risk objects\n  const monthlyRisk = [];\n\n  Object.keys(monthlyRain).forEach(month => {\n    const cycloneForMonth = { windGusts: [], windSpeed: [], pressure: [] };\n\n    Object.keys(cycloneDaily).forEach(date => {\n      const dateMonth = new Date(date).toLocaleString(\"default\", {\n        month: \"long\", year: \"numeric\"\n      });\n\n      if (dateMonth === month) {\n        cycloneForMonth.windGusts.push(Math.max(...cycloneDaily[date].windGusts));\n        cycloneForMonth.windSpeed.push(\n          cycloneDaily[date].windSpeed.reduce((a, b) => a + b, 0) /\n          cycloneDaily[date].windSpeed.length\n        );\n        cycloneForMonth.pressure.push(Math.min(...cycloneDaily[date].pressure));\n      }\n    });\n\n    // ✅ FIXED: Use defaults for historical months\n    if (!cycloneForMonth.windGusts.length) {\n      cycloneForMonth.windGusts = [20];\n      cycloneForMonth.windSpeed = [10];\n      cycloneForMonth.pressure = [1013];\n    }\n\n    monthlyRisk.push(calculateMonthlyRisk({\n      location: { latitude: rainDataObj.latitude, longitude: rainDataObj.longitude },\n      month,\n      rainfallValues: monthlyRain[month],\n      floodValues: monthlyFlood[month] || [],\n      cycloneDailyValues: cycloneForMonth\n    }));\n  });\n  \n\n  // 🚀 CHANGED: Filter ONLY high-risk months (>=7) and sort by risk\n  return monthlyRisk\n    .filter(item => item.combinedScore >= 3)  // ONLY high-risk months\n    .sort((a, b) => b.combinedScore - a.combinedScore);  // Highest risk first\n}\n\n// 🚀 UPDATED: Now generates high-risk months for AI payload\nconst highRiskMonths = generateHighRiskMonths({\n  rainDataObj,\n  floodDataObj,\n  cycloneDataObj\n});\n\n// console.log('this is the rainDataObj',rainDataObj)\n// console.log('this is the floodDataObj',floodDataObj)\n// console.log('this is the cycloneDataObj',cycloneDataObj)\n\n// console.log(\"High Risk Months (Score >=4):\", highRiskMonths);\n\n// 🚀 READY FOR AI PAYLOAD - pass this directly to generateAIPayload\nconst aiPayload = generateAIPayload({\n  location: {\n    latitude: rainDataObj.latitude,\n    longitude: rainDataObj.longitude\n  },\n  monthlyRiskData: highRiskMonths  // Only high-risk months!\n});\n\n// console.log(\"AI Evaluation Payload:\", aiPayload);\n\nbh.local.aiPayload = aiPayload\n",
+        "script": "const response = bh.local.async_response.map((item) => item.local.response.payload)\n// console.log('this is the response from async result',response)\n\nconst rainDataObj = response[0];\nconst floodDataObj = response[1];\nconst cycloneDataObj = response[2];\n\n\n\nfunction categorize(value, thresholds) {\n  if (value <= thresholds.low) return \"LOW\";\n  if (value <= thresholds.medium) return \"MEDIUM\";\n  return \"HIGH\";\n}\n\nfunction riskToScore(risk) {\n  if (risk === \"LOW\") return 1;\n  if (risk === \"MEDIUM\") return 2;\n  return 3;\n}\n\nfunction aggregateHourlyToDaily(hourly) {\n  const daily = {};\n\n  hourly.time.forEach((t, i) => {\n    const date = t.split(\"T\")[0];\n    if (!daily[date]) {\n      daily[date] = {\n        windGusts: [],\n        windSpeed: [],\n        pressure: []\n      };\n    }\n\n    daily[date].windGusts.push(hourly.wind_gusts_10m[i]);\n    daily[date].windSpeed.push(hourly.wind_speed_10m[i]);\n    daily[date].pressure.push(hourly.pressure_msl[i]);\n  });\n\n  return daily;\n}\n\nfunction groupDailyToMonthly(dailyObj, valueKey) {\n  const monthly = {};\n\n  dailyObj.time.forEach((dateStr, i) => {\n    const month = new Date(dateStr).toLocaleString(\"default\", {\n      month: \"long\",\n      year: \"numeric\"\n    });\n\n    if (!monthly[month]) monthly[month] = [];\n    monthly[month].push(dailyObj[valueKey][i]);\n  });\n\n  return monthly;\n}\n\nfunction safeSum(arr) {\n  return arr.length ? arr.reduce((a, b) => a + b, 0) : 0;\n}\n\nfunction safeAvg(arr) {\n  return arr.length ? safeSum(arr) / arr.length : 0;\n}\n\nfunction safeMax(arr) {\n  return arr.length ? Math.max(...arr) : 0;\n}\n\nfunction calculateMonthlyRisk({\n  location,\n  month,\n  rainfallValues = [],\n  floodValues = [],\n  cycloneDailyValues\n}) {\n  // --- Rain ---\n  const totalRainfall = safeSum(rainfallValues);\n  // console.log('this is the total rainfall',totalRainfall)\n  const rainyDays = rainfallValues.filter(r => r > 2).length;\n  const extremeRainDays = rainfallValues.filter(r => r > 50).length;\n  const rainRisk = categorize(totalRainfall, { high: 150, medium: 50 });\n\n  // --- Flood ---\n  const peakRiverDischarge = safeMax(floodValues);\n  const avgRiverDischarge = safeAvg(floodValues);\n  const floodDays = floodValues.filter(f => f > 500).length;\n  // console.log('this is the peakriverDischarge',peakRiverDischarge)\n  const floodRisk = categorize(peakRiverDischarge, { high: 4, medium: 2 });\n\n  // --- Cyclone ---\n  const maxWindGust = safeMax(cycloneDailyValues.windGusts);\n  const avgWindSpeed = safeAvg(cycloneDailyValues.windSpeed);\n  const lowPressureDays =\n    cycloneDailyValues.pressure?.filter(p => p < 1000).length || 0;\n  const stormRisk = categorize(maxWindGust, { low: 40, medium: 70 });\n\n  // --- Combined Score (max = 9) ---\n  const combinedScore =\n    riskToScore(rainRisk) +\n    riskToScore(floodRisk) +\n    riskToScore(stormRisk);\n\n  return {\n    location,\n    month,\n    monthIndex: new Date(month).getMonth() + 1,\n    riskIndicators: { rainRisk, floodRisk, stormRisk },\n    combinedScore,\n    metrics: {\n      totalRainfall,\n      rainyDays,\n      extremeRainDays,\n      avgRiverDischarge,\n      peakRiverDischarge,\n      floodDays,\n      avgWindSpeed,\n      maxWindGust,\n      lowPressureDays\n    }\n  };\n}\n\n\nfunction keepMostCommonMonths(highRiskMonths) {\n  const byMonthName = {};\n\n  for (const item of highRiskMonths) {\n    // Convert \"May 2024\" -> \"May\"\n    const monthName = new Date(item.month).toLocaleString(\"default\", {\n      month: \"long\"\n    });\n\n    if (!byMonthName[monthName]) {\n      byMonthName[monthName] = [];\n    }\n    byMonthName[monthName].push(item);\n  }\n\n  // For each month name, keep the highest combinedScore (or whatever rule you want)\n  const picked = Object.values(byMonthName).map(listForMonth => {\n    return listForMonth.sort((a, b) => b.combinedScore - a.combinedScore)[0];\n  });\n\n  // Optional: sort back in calendar order by monthIndex\n  return picked.sort((a, b) => a.monthIndex - b.monthIndex);\n}\n\n\n\n\n\nfunction generateAIPayload({\n  location,\n  monthlyRiskData\n}) {\n  // Filter ONLY high-risk months (already filtered, but double-check)\n  // console.log('this is the monthly risk data', monthlyRiskData)\n  const highRiskMonths = monthlyRiskData.filter(item => item.combinedScore >= 2);\n  const sortedHighRisk = highRiskMonths.sort((a, b) => b.combinedScore - a.combinedScore);\n  \n\n  return {\n    evaluation_context: {\n      purpose: \"Dynamic Insurance Coverage Activation\",\n      location: {\n        latitude: location.latitude,\n        longitude: location.longitude,\n        description: \"User location coordinates for hazard analysis\"\n      },\n      risk_model: {\n        type: \"multi-hazard\",\n        hazards_analyzed: [\"rain\", \"flood\", \"cyclone\"],\n        score_range: { low: 1, medium: 2, high: 3, max: 9 },\n        threshold: { activate_coverage: 2, optional_topup: 2 }\n      },\n      analysis_period: \"Next 12 months forecast + 5-year historical baseline\"\n    },\n\n    high_risk_months: sortedHighRisk.map(item => ({\n      month: item.month,\n      monthIndex: item.monthIndex,\n      risk_level: item.riskIndicators,\n      combined_risk_score: item.combinedScore,\n\n      hazard_breakdown: {\n        rain: {\n          risk_level: item.riskIndicators.rainRisk,\n          total_rainfall_mm: item.metrics.totalRainfall,\n          rainy_days: item.metrics.rainyDays,\n          extreme_rain_days: item.metrics.extremeRainDays,\n          recommendation: item.metrics.extremeRainDays > 0 ? \"HIGH PRECIPITATION RISK\" : \"MONITOR\"\n        },\n        flood: {\n          risk_level: item.riskIndicators.floodRisk,\n          avg_discharge_m3s: item.metrics.avgRiverDischarge,\n          peak_discharge_m3s: item.metrics.peakRiverDischarge,\n          flood_days: item.metrics.floodDays,\n          recommendation: item.metrics.floodDays > 0 ? \"RIVER FLOOD RISK\" : \"ELEVATION PROTECTED\"\n        },\n        cyclone: {\n          risk_level: item.riskIndicators.stormRisk,\n          avg_wind_speed_kmh: item.metrics.avgWindSpeed,\n          max_wind_gust_kmh: item.metrics.maxWindGust,\n          low_pressure_days: item.metrics.lowPressureDays,\n          recommendation: item.metrics.maxWindGust > 50 ? \"GALE FORCE WINDS\" : \"MONITOR\"\n        }\n      }\n    })),\n\n    insurance_decision_required: {\n      action_needed: sortedHighRisk.length > 0,\n      recommended_coverage: {\n        active_months: sortedHighRisk.map(m => m.month),\n        premium_adjustment: `+${Math.round((sortedHighRisk.length / 12) * 100)}% for high-risk period`,\n        customer_notification: `Activate coverage for ${sortedHighRisk.length} high-risk months`\n      },\n      risk_summary: {\n        total_high_risk_months: sortedHighRisk.length,\n        avg_combined_score: sortedHighRisk.length > 0 ?\n          (sortedHighRisk.reduce((sum, m) => sum + m.combinedScore, 0) / sortedHighRisk.length).toFixed(1) : 0,\n        dominant_hazard: sortedHighRisk.length > 0 ?\n          Object.keys(sortedHighRisk[0].riskIndicators).find(h =>\n            sortedHighRisk[0].riskIndicators[h] === 'HIGH') || 'Mixed' : 'None'\n      }\n    }\n  };\n}\n\n\n\n\n// 🚀 CHANGED: Now returns ALL high-risk months (>=7), not just top 3\nfunction generateHighRiskMonths({\n  rainDataObj,\n  floodDataObj,\n  cycloneDataObj\n}) {\n  // Extract data\n  const dailyRain = rainDataObj.daily;\n  const dailyFlood = floodDataObj.daily;\n  const hourlyCyclone = cycloneDataObj.hourly;\n\n  // Step 1: Convert cyclone hourly → daily\n  const cycloneDaily = aggregateHourlyToDaily(hourlyCyclone);\n\n  // Step 2: Group rain & flood by month\n  const monthlyRain = groupDailyToMonthly(dailyRain, \"precipitation_sum\");\n  const monthlyFlood = groupDailyToMonthly(\n    dailyFlood,\n    \"river_discharge_mean\"\n  );\n  // console.log('monthlyRain', monthlyRain)\n  // console.log('monthlyFlood', monthlyFlood)\n  // Step 3: Build ALL monthly risk objects\n  const monthlyRisk = [];\n\n  Object.keys(monthlyRain).forEach(month => {\n    const cycloneForMonth = { windGusts: [], windSpeed: [], pressure: [] };\n\n    Object.keys(cycloneDaily).forEach(date => {\n      const dateMonth = new Date(date).toLocaleString(\"default\", {\n        month: \"long\", year: \"numeric\"\n      });\n\n      if (dateMonth === month) {\n        cycloneForMonth.windGusts.push(Math.max(...cycloneDaily[date].windGusts));\n        cycloneForMonth.windSpeed.push(\n          cycloneDaily[date].windSpeed.reduce((a, b) => a + b, 0) /\n          cycloneDaily[date].windSpeed.length\n        );\n        cycloneForMonth.pressure.push(Math.min(...cycloneDaily[date].pressure));\n      }\n    });\n\n    // ✅ FIXED: Use defaults for historical months\n    if (!cycloneForMonth.windGusts.length) {\n      cycloneForMonth.windGusts = [20];\n      cycloneForMonth.windSpeed = [10];\n      cycloneForMonth.pressure = [1013];\n    }\n\n    monthlyRisk.push(calculateMonthlyRisk({\n      location: { latitude: rainDataObj.latitude, longitude: rainDataObj.longitude },\n      month,\n      rainfallValues: monthlyRain[month],\n      floodValues: monthlyFlood[month] || [],\n      cycloneDailyValues: cycloneForMonth\n    }));\n  });\n  \n\n  // 🚀 CHANGED: Filter ONLY high-risk months (>=7) and sort by risk\n  return monthlyRisk\n    .filter(item => item.combinedScore >= 3)  // ONLY high-risk months\n    .sort((a, b) => b.combinedScore - a.combinedScore);  // Highest risk first\n}\n\n// 🚀 UPDATED: Now generates high-risk months for AI payload\nconst highRiskMonths = generateHighRiskMonths({\n  rainDataObj,\n  floodDataObj,\n  cycloneDataObj\n});\nconst condensedHighRiskMonths = keepMostCommonMonths(highRiskMonths);\n\nfunction pickTopRiskMonths(highRiskMonths, topN = 5) {\n  const byMonthName = {};\n\n  // Group by month name (Jan, Feb, ...)\n  for (const item of highRiskMonths) {\n    const monthName = new Date(item.month).toLocaleString(\"default\", {\n      month: \"long\"\n    });\n\n    if (!byMonthName[monthName]) {\n      byMonthName[monthName] = [];\n    }\n    byMonthName[monthName].push(item);\n  }\n\n  // For each month name, keep the entry with highest combinedScore\n  const onePerMonth = Object.values(byMonthName).map(listForMonth =>\n    listForMonth.sort((a, b) => b.combinedScore - a.combinedScore)[0]\n  );\n\n  // Now sort all remaining months by risk and keep only top N\n  const topMonths = onePerMonth\n    .sort((a, b) => b.combinedScore - a.combinedScore)\n    .slice(0, topN);\n\n  // Optional: sort them in calendar order if you prefer\n  return topMonths.sort((a, b) => a.monthIndex - b.monthIndex);\n}\n\n\nconst topRiskMonths = pickTopRiskMonths(highRiskMonths, 4);\n\n\n// console.log('this is the rainDataObj',rainDataObj)\n// console.log('this is the floodDataObj',floodDataObj)\n// console.log('this is the cycloneDataObj',cycloneDataObj)\n\n// console.log(\"High Risk Months (Score >=4):\", highRiskMonths);\n\n// 🚀 READY FOR AI PAYLOAD - pass this directly to generateAIPayload\nconst aiPayload = generateAIPayload({\n  location: {\n    latitude: rainDataObj.latitude,\n    longitude: rainDataObj.longitude\n  },\n  monthlyRiskData: topRiskMonths\n});\n\n\nbh.local.aiPayload = aiPayload;",
         "functionName": "rainfallData",
         "category": "Function",
         "x": 540,
@@ -523,11 +523,253 @@
         "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
         "viewType": "common",
         "nodeType": "flow",
-        "name": "",
-        "script": "const GEMINI_API_KEY = process.env.GEMINI_API_KEY;\n\nconst url =\n  \"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\" +\n  GEMINI_API_KEY;\n\nconst prompt = `\nYou are an insurance risk analyst.\nReturn ONLY JSON.\n\nDATA:\n${JSON.stringify(bh.local.aiPayload)}\n`;\n\nconst body = {\n  contents: [\n    {\n      parts: [{ text: prompt }]\n    }\n  ],\n  generationConfig: {\n    responseMimeType: \"application/json\"\n  }\n};\n\nasync function callGemini() {\n  const response = await fetch(url, {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\"\n    },\n    body: JSON.stringify(body)\n  });\n\n  const data = await response.json();\n\n  // Gemini response parsing\n  const text =\n    data.candidates?.[0]?.content?.parts?.[0]?.text;\n\n  return JSON.parse(text);\n}\n\ncallGemini()\n  .then(result => console.log(\"AI Result:\", result))\n  .catch(err => console.error(err));\n",
-        "functionName": "sd_PiaDQfAlchrSPYEh",
+        "name": "calling gemini",
+        "script": "const GEMINI_API_KEY = process.env.GEMINI_API_KEY;\n\nconst url =\n  \"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=\" +\n  GEMINI_API_KEY;\n\nconst prompt = `\nYou are an insurance risk analyst.include the premiumMultiplier also\nReturn ONLY strict JSON. Do not include any extra text or formatting.\n\nDATA:\n${JSON.stringify(bh.local.aiPayload)}\n`;\n\nconst body = {\n  contents: [\n    {\n      role: \"user\",\n      parts: [{ text: prompt }]\n    }\n  ],\n  generationConfig: {\n    responseMimeType: \"application/json\"\n  }\n};\n\nasync function callGemini() {\n  const response = await fetch(url, {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\"\n    },\n    body: JSON.stringify(body)\n  });\n\n  if (!response.ok) {\n    const errText = await response.text();\n    throw new Error(`Gemini error ${response.status}: ${errText}`);\n  }\n\n  const data = await response.json();\n  console.log(\"RAW GEMINI RESPONSE:\", JSON.stringify(data, null, 2));\n\n  const candidate = data.candidates?.[0];\n  if (!candidate) {\n    throw new Error(\"No candidates returned by Gemini\");\n  }\n\n  const part = candidate.content?.parts?.[0];\n  if (!part || !part.text) {\n    throw new Error(\"Gemini did not return text output\");\n  }\n\n  // Safe JSON parse with clearer error\n  try {\n    return JSON.parse(part.text);\n  } catch (e) {\n    console.error(\"Model did not return valid JSON:\", part.text);\n    throw new Error(\"Failed to parse model output as JSON\");\n  }\n}\n\nconsole.log('just before')\nasync function runGemini() {\n  try {\n    const result = await callGemini();\n    console.log(\"AI Result:\", result);\n    bh.local.aiResult =  result;\n\n  } catch (err) {\n    console.error(err);\n  }\n}\n\n// Call your async wrapper\nrunGemini();\n\nconsole.log('just after')\n\n\n\n",
+        "functionName": "callingGemini",
         "category": "Function",
-        "x": 700,
+        "x": 645,
+        "y": 180,
+        "wires": [
+            [
+                "sd_2cjl6gMSWjwW5SzT"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_uEBLLkNkl7dJLNU8",
+        "type": "Start",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "client-server",
+        "nodeType": "start",
+        "name": "call reels",
+        "outputs": 1,
+        "inputVariables": [
+            {
+                "key": "data",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": false
+            }
+        ],
+        "localVariables": [
+            {
+                "key": "response",
+                "defaultValue": {
+                    "type": "any",
+                    "value": ""
+                },
+                "output": true
+            }
+        ],
+        "accept_bh": false,
+        "functionName": "callReels",
+        "category": "General",
+        "x": 140,
+        "y": 360,
+        "wires": [
+            [
+                "sd_X3YQPZQsOmICe8dE"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": true,
+        "serviceName": "flows"
+    },
+    {
+        "id": "sd_2cjl6gMSWjwW5SzT",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "setTimeout(() => {\n    if (bh.local.aiResult) {\n        bh.local.reelsPayload = {\n            \"weather\":bh.input.data.weather,\n            \"location\":bh.input.data.location,\n            \"property\":bh.input.data.property,\n            \"basePremium\":bh.input.data.basePremium,\n            \"premiumMultiplier\":1.33,\n            \"vehicleModel\":bh.input.data.vehicleModel,\n            \"insuranceType\":bh.input.data.insuranceType,\n            \"safetyMeasure\":bh.input.data.safetyMeasure,\n            \"building\":bh.input.data.building\n        }\n\n        console.log('this is the result from ai', bh.local.aiResult)\n    }\n}, 10000)",
+        "functionName": "sd_2cjl6gMSWjwW5SzT",
+        "category": "Function",
+        "x": 765,
+        "y": 180,
+        "wires": [
+            [
+                "sd_mmmcq013WxS0bFuH"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_X3YQPZQsOmICe8dE",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "bh.local.body = {\n    \"workflowId\": \"5aae4a74-79a6-426d-925c-ca60ed2f31d7\",\n    \"version\": \"1.0.4\",\n    \"inputObj\": bh.input.data,\n    \"subFlowIDs\": []\n}\n\nbh.local.headers = {\n    token: process.env.REELS_TOKEN\n}\n\nbh.local.url = \"https://sandbox.neutrinos-apps.com/integration/api/runtime/sync\"",
+        "functionName": "sd_X3YQPZQsOmICe8dE",
+        "category": "Function",
+        "x": 285,
+        "y": 360,
+        "wires": [
+            [
+                "sd_YkmV8xgZD2mrkUsp"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_YkmV8xgZD2mrkUsp",
+        "type": "ServerHttpRequest",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "server",
+        "nodeType": "flow",
+        "name": "",
+        "method": "post",
+        "methodMappingObj": {},
+        "urlMapping": "bh.local.url",
+        "urlMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "url"
+        },
+        "ret": "json",
+        "retMappingObj": {},
+        "reqBody": "bh.local.body",
+        "reqBodyObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "body"
+        },
+        "resultMapping": "bh.local.response",
+        "resultMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "response"
+        },
+        "headerMapping": "bh.local.headers",
+        "headerMappingObj": {
+            "mapVarType": "bh.local",
+            "mapVarValue": "headers"
+        },
+        "params": {},
+        "paramsObj": [],
+        "paramMappingObj": {},
+        "useAuthTypeMappingObj": {},
+        "useAuthUsername": "",
+        "useAuthUsernameMappingObj": "",
+        "useAuthPassword": "",
+        "useAuthPasswordMappingObj": "",
+        "useAuthToken": "",
+        "useAuthTokenMappingObj": "",
+        "useQueryString": false,
+        "tls": "",
+        "followRedirect": true,
+        "paytoqs": false,
+        "useAuthentication": false,
+        "rejectUnauthorized": false,
+        "proxy": "",
+        "useProxy": false,
+        "usetls": false,
+        "cookiesMapObj": {},
+        "cookiesList": {},
+        "switchStates": {
+            "cookies": "Map"
+        },
+        "editableListData": {},
+        "timeout": {
+            "type": "num",
+            "value": ""
+        },
+        "functionName": "sd_YkmV8xgZD2mrkUsp",
+        "category": "HTTP",
+        "x": 420,
+        "y": 360,
+        "wires": [
+            [
+                "sd_jWT8prHESEqAnGsc"
+            ]
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_jWT8prHESEqAnGsc",
+        "type": "Script",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "script": "console.log('response from reels',bh.local.response)",
+        "functionName": "sd_jWT8prHESEqAnGsc",
+        "category": "Function",
+        "x": 540,
+        "y": 360,
+        "wires": [
+            []
+        ],
+        "__n_excludedFromValidation__": {},
+        "generateNext": false,
+        "serviceName": "flows",
+        "generated": true
+    },
+    {
+        "id": "sd_mmmcq013WxS0bFuH",
+        "type": "CallService",
+        "z": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+        "viewType": "common",
+        "nodeType": "flow",
+        "name": "",
+        "outputs": 1,
+        "isValidNode": true,
+        "noerr": 0,
+        "service": {
+            "id": "SSD_SERVICE_ID_sd_qWViOdXJwB7edSvA",
+            "type": "tab",
+            "createdDate": "2025-12-13T13:32:17.467Z",
+            "label": "flows",
+            "disabled": false,
+            "info": "",
+            "functionSeq": 0
+        },
+        "flow": {
+            "flowId": "sd_uEBLLkNkl7dJLNU8",
+            "flowName": "callReels"
+        },
+        "inputVariables": [
+            {
+                "key": "data",
+                "map": true,
+                "valueType": "bh.local",
+                "value": "reelsPayload"
+            }
+        ],
+        "bhVariables": [],
+        "outputMapping": [
+            {
+                "mapVarType": "local",
+                "key": "response",
+                "valueType": "bh.local",
+                "value": "response_reels",
+                "mapVarName": "response",
+                "localVar": "bh.local.response_reels"
+            }
+        ],
+        "callService": "./flows",
+        "startName": "callReels",
+        "inputParams": [
+            "bh.local.reelsPayload"
+        ],
+        "accept_bh": false,
+        "functionName": "sd_mmmcq013WxS0bFuH",
+        "category": "General",
+        "x": 885,
         "y": 180,
         "wires": [
             []
